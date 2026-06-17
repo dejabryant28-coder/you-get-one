@@ -1,0 +1,93 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>You Get One - Content Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1418;--panel:#161d23;--line:#2a353d;--ink:#f4efe7;--muted:#9fb0ba;--gold:#e8d0a8;--accent:#7ec8c0}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:'Cormorant Garamond',serif;font-size:18px}
+header{text-align:center;padding:46px 20px 10px}header .tag{font-size:15px;letter-spacing:8px;color:var(--muted);text-transform:uppercase}
+header h1{font-family:'DM Serif Display',serif;font-size:52px;margin:8px 0 6px;font-weight:400}header p{color:var(--muted);max-width:620px;margin:0 auto}
+.toolbar{max-width:1180px;margin:14px auto 0;padding:0 20px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+.tcount{font-size:20px}.tcount b{color:var(--gold);font-family:'DM Serif Display',serif}
+.tbtn{cursor:pointer;background:transparent;border:1px solid var(--line);color:var(--muted);font-family:inherit;font-size:16px;letter-spacing:1px;padding:7px 16px;border-radius:9px}
+.tbtn:hover{border-color:var(--accent);color:var(--ink)}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 20px 80px;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:24px;align-items:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+.card.used{opacity:.45;filter:grayscale(.4)}
+.num{position:absolute;margin:12px;background:rgba(15,20,24,.78);border:1px solid var(--line);font-family:'DM Serif Display',serif;font-size:18px;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--gold)}
+.badge{position:absolute;right:0;margin:12px;background:var(--accent);color:#0c1a18;font-size:13px;letter-spacing:2px;text-transform:uppercase;padding:5px 12px;border-radius:8px;font-weight:600}
+.imgwrap{position:relative;line-height:0}.imgwrap img{width:100%;display:block}
+.ctitle{font-family:'DM Serif Display',serif;font-size:23px;padding:15px 18px 2px}
+.actions{display:flex;gap:10px;margin:10px 18px 4px;flex-wrap:wrap}
+.actions a,.actions button{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-family:inherit;font-size:16px;padding:9px 16px;border-radius:10px;cursor:pointer;border:1px solid var(--line)}
+.dlbtn{background:var(--gold);color:#1a1206;font-weight:600;border-color:var(--gold)}
+.dlbtn:hover{filter:brightness(1.06)}
+.usebtn{background:transparent;color:var(--accent);border-color:var(--accent)}
+.usebtn:hover{background:rgba(126,200,192,.12)}
+.unbtn{background:transparent;color:var(--muted)}
+.unbtn:hover{color:var(--ink);border-color:var(--accent)}
+.body{padding:6px 18px 18px}
+.plat{border-top:1px solid var(--line);padding:13px 0 4px}.phead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pname{font-size:14px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);font-weight:600}
+.copy{cursor:pointer;background:transparent;border:1px solid var(--line);color:var(--muted);font-family:inherit;font-size:14px;letter-spacing:1px;padding:4px 12px;border-radius:8px}
+.copy:hover{border-color:var(--accent);color:var(--ink)}.copy.done{border-color:var(--accent);color:var(--accent)}
+.cap{margin:6px 0 2px;white-space:pre-wrap}.tags .pname{color:var(--gold)}.tagline{color:var(--muted);font-size:16px;margin-top:6px}
+.empty{text-align:center;color:var(--muted);padding:50px 20px;font-size:22px;font-family:'DM Serif Display',serif}
+footer{text-align:center;color:var(--muted);padding:0 20px 60px;font-size:15px;letter-spacing:1px}
+</style></head><body>
+<header><div class="tag">You Get One &middot; MDTW</div><h1>This or That Content Hub</h1>
+<p>Download the image, copy the caption per platform, grab the hashtags. Tap "Mark as posted" to clear it from your view.</p></header>
+<div class="toolbar">
+  <span class="tcount"><b id="left">0</b> of <span id="total">0</span> left to post</span>
+  <button class="tbtn" id="toggle">Show posted (0)</button>
+  <button class="tbtn" id="reset">Reset all</button>
+</div>
+<div class="wrap" id="wrap"></div>
+<footer>Make the wonders travel &middot; keep the jollof debate going</footer>
+<script>
+var POSTS=[{"n": 1, "file": "ygo_ghana_nigeria.png", "title": "Nigeria or Ghana (Detty December)", "ig": "You get ONE December. Lagos or Accra?\nTwist: same flights sold out months early, same energy, two different vibes. And yes... we're finally settling the jollof debate in the comments. NG or GH", "tiktok": "you get ONE detty december Lagos or Accra?? the jollof debate ends in the comments NG or GH", "pinterest": "Detty December in Nigeria or Ghana. Two very different December trips. Save this and pick your side.", "tags": "#dettydecember #visitghana #lagosvibes #afrobeatstravel #blacktravel", "uri": "img/ghana_nigeria.jpg"}, {"n": 2, "file": "ygo_safari_sahara.png", "title": "Safari or Sahara", "ig": "You get ONE bucket list trip. Lions or dunes?\nTwist: one wakes you at sunrise for the Big Five. One keeps you up for a sky full of stars.", "tiktok": "safari or sahara?? sunrise lions or a sky full of stars pick one", "pinterest": "East Africa safari or Sahara desert. Two unforgettable African adventures. Which is your dream?", "tags": "#safariadventure #saharadesert #eastafricatravel #moroccotravel #bucketlisttravel", "uri": "img/safari_sahara.jpg"}, {"n": 3, "file": "ygo_swiss.png", "title": "The Alps or The Islands", "ig": "You get ONE trip. The Alps or the Islands?\nTwist: one slows you down, one wakes you up. Which version of you needs to travel right now?", "tiktok": "the alps or the islands? one slows you down, one wakes you up. which one are you today?", "pinterest": "Switzerland and Liechtenstein or Philippines and Hong Kong. Cool calm or warm chaos. Save and pick.", "tags": "#alpsadventure #switzerlandtravel #philippinestravel #islandlife #wheretonext", "uri": "img/swiss.jpg"}, {"n": 4, "file": "ygo_beachcity.png", "title": "Beach or City", "ig": "You get ONE. Do nothing, or do everything?\nTwist: be honest about which one actually rests you.", "tiktok": "beach or city? the real twist: which one ACTUALLY rests you", "pinterest": "Beach trip or city trip. Which one truly recharges you?", "tags": "#beachvacation #citybreak #slowtravel #traveltips #wanderlust", "uri": "img/beachcity.jpg"}, {"n": 5, "file": "ygo_relax_adventure.png", "title": "Relax or Adventure", "ig": "You get ONE week off all year. Spa and silence, or adrenaline and sore muscles?\nTwist: one you enjoy in the moment. One you brag about for years. Which do you actually need?", "tiktok": "your ONLY week off relax vs adventure one feels good now, one becomes a story forever pick", "pinterest": "Relax or adventure. How would you spend your one big trip this year?", "tags": "#relaxationtravel #adventuretravel #selfcaretravel #wheretonext #bucketlist", "uri": "img/relax_adventure.jpg"}, {"n": 6, "file": "ygo_rafting_zipline.png", "title": "Rafting or Zipline", "ig": "You get ONE adrenaline day. White water rafting, or flying down a zipline?\nTwist: one is fear of falling. One is fear of the rapids. Which fear wins?", "tiktok": "rafting or zipline?? fear of the rapids or fear of falling be honest", "pinterest": "White water rafting or ziplining. Which adventure would you pick?", "tags": "#adventuretravel #whitewaterrafting #zipline #adrenalinejunkie #thingstodo", "uri": "img/rafting_zipline.jpg"}, {"n": 7, "file": "ygo_roadtrip_train.png", "title": "Road Trip USA or Train Through Europe", "ig": "You get ONE epic journey. A USA road trip, or a train through Europe?\nTwist: one is total freedom and gas station snacks. One is castles out the window and zero parking stress.", "tiktok": "USA road trip or euro train?? freedom & snacks or castles out the window", "pinterest": "American road trip or a scenic train through Europe. Which journey calls you?", "tags": "#roadtrip #eurotrip #traintravel #usaroadtrip #slowtravel", "uri": "img/roadtrip_train.jpg"}, {"n": 8, "file": "ygo_food_bangkok_mexico.png", "title": "Eat in Bangkok or Mexico City", "ig": "You get ONE plate tonight. Bangkok or Mexico City?\nTwist: pad thai and mango sticky rice... or street tacos and churros. You can only sit at one table.", "tiktok": "one plate, one city Bangkok or Mexico City?? pad thai & mango sticky rice OR tacos & churros", "pinterest": "Street food in Bangkok or Mexico City. Which plate would you pick?", "tags": "#foodtravel #streetfood #bangkokfood #mexicocityfood #foodie", "uri": "img/food_bangkok_mexico.jpg"}, {"n": 9, "file": "ygo_activities_qt_int.png", "title": "Queenstown or Interlaken (Adventure Day)", "ig": "You get ONE adventure day. Queenstown or Interlaken?\nTwist: skydive and bungee over a lake... or paraglide and canyon swing over the Alps. Same heartbeat, different country.", "tiktok": "adventure capital showdown Queenstown or Interlaken?? skydive+bungee or paraglide+canyon swing", "pinterest": "Queenstown New Zealand or Interlaken Switzerland. Which adventure day would you survive?", "tags": "#adventuretravel #queenstown #interlaken #adrenaline #bucketlist", "uri": "img/activities_qt_int.jpg"}, {"n": 10, "file": "ygo_flights.png", "title": "1 Business Class or 4 Economy", "ig": "You get ONE. Fly business class once, or take four economy trips?\nTwist: comfort you won't forget, or stories you keep forever? Plus... in this game, they're both free.", "tiktok": "they're BOTH free one fancy flight or four trips?? comfort you won't forget or stories you keep forever", "pinterest": "If both were free, would you fly business class once or take four economy trips?", "tags": "#businessclass #traveldreams #wheretonext #traveltips #aviation", "uri": "img/flights.jpg"}, {"n": 11, "file": "ygo_egypt_jordan.png", "title": "The Pyramids or Petra", "ig": "You get ONE ancient wonder. Pyramids or Petra?\nTwist: both will give you chills. Only one fits this trip.", "tiktok": "the pyramids or petra?? both give you chills, you only get one", "pinterest": "Egypt pyramids or Jordan's Petra. Two ancient wonders. Which is your dream?", "tags": "#egypttravel #petra #jordantravel #ancientwonders #bucketlisttravel", "uri": "img/egypt_jordan.jpg"}, {"n": 12, "file": "ygo_iceland_norway.png", "title": "Fire & Ice or The Fjords", "ig": "You get ONE northern adventure. Fire and ice or the fjords?\nTwist: both chase the northern lights. Which landscape calls you?", "tiktok": "iceland or norway? both chase the northern lights which one calls you", "pinterest": "Iceland or Norway. Two epic northern adventures.", "tags": "#icelandtravel #norwaytravel #northernlights #nordictravel #adventuretravel", "uri": "img/iceland_norway.jpg"}, {"n": 13, "file": "ygo_capetown_marrakech.png", "title": "The Cape or The Medina", "ig": "You get ONE African escape. The Cape or the Medina?\nTwist: one is mountains and wine. One is souks and spice.", "tiktok": "cape town or marrakech? mountains & wine or souks & spice", "pinterest": "Cape Town or Marrakech. Two stunning sides of Africa. Where would you wander?", "tags": "#capetown #marrakech #southafricatravel #moroccotravel #africatravel", "uri": "img/capetown_marrakech.jpg"}, {"n": 14, "file": "ygo_tokyo_seoul.png", "title": "Tokyo or Seoul", "ig": "You get ONE Asia trip. Neon nights or cool and trendy?\nTwist: one is sushi and shrines. One is kbbq and skincare hauls.", "tiktok": "tokyo or seoul?? sushi & shrines or kbbq & kpop pick your flight", "pinterest": "Tokyo or Seoul. Two incredible Asia city trips. Which would you book?", "tags": "#tokyotravel #seoultravel #japantrip #koreatravel #asiatravel", "uri": "img/tokyo_seoul.jpg"}, {"n": 15, "file": "ygo_santorini_amalfi.png", "title": "Santorini or Amalfi", "ig": "You get ONE Mediterranean summer. Blue domes or the cliff coast?\nTwist: same sunsets, very different postcard.", "tiktok": "santorini or amalfi?? same sunsets, different postcard", "pinterest": "Santorini or the Amalfi Coast. Two dreamy Mediterranean escapes.", "tags": "#santorini #amalficoast #greecetravel #italytravel #mediterraneansummer", "uri": "img/santorini_amalfi.jpg"}, {"n": 16, "file": "ygo_bali_maldives.png", "title": "Bali or Maldives", "ig": "You get ONE island trip. Jungle or overwater?\nTwist: one is temples and rice fields. One is pure blue and total silence.", "tiktok": "bali or maldives?? temples & rice fields or pure blue silence", "pinterest": "Bali or Maldives. Two dream island escapes. Save and pick yours.", "tags": "#balitravel #maldives #islandlife #honeymoondestination #tropicaltravel", "uri": "img/bali_maldives.jpg"}, {"n": 17, "file": "ygo_epcot.png", "title": "Epcot or Hong Kong Disneyland", "ig": "You get ONE. Same mouse, different magic.\nTwist: one you know by heart, one has rides the US will never get.", "tiktok": "same mouse, different magic Epcot or Hong Kong Disney? twist in the comments", "pinterest": "Epcot or Hong Kong Disneyland. Two totally different Disney days. Pick yours.", "tags": "#disneytravel #disneyparks #epcot #hongkongdisneyland #disneyworld", "uri": "img/epcot.jpg"}, {"n": 18, "file": "ygo_tough_repeat.png", "title": "Collect the World or Belong Somewhere", "ig": "You get ONE year of travel. A new country every trip but you can NEVER repeat one... or live in a single dream city abroad the whole year.\nTwist: collect the world, or actually belong somewhere?", "tiktok": "pick ONE for a year a new country every time but never repeat, OR live in one dream city abroad harder than it looks", "pinterest": "A new country every trip with no repeats, or living abroad in one city for a year. Which life?", "tags": "#slowtravel #digitalnomad #expatlife #liveabroad #wheretonext", "uri": "img/tough_repeat.jpg"}, {"n": 19, "file": "ygo_tough_mystery.png", "title": "Free Mystery Trip or Pay for Your Dream", "ig": "You get ONE trip. It's FREE but you don't get to choose where... or you pay full price for your exact dream trip.\nTwist: would you give up control to travel for free?", "tiktok": "free trip but you DON'T pick where or pay full for your dream trip what are you choosing??", "pinterest": "A free mystery trip you can't choose, or paying full for your dream destination. Which?", "tags": "#mysterytrip #traveldeals #traveldreams #wheretonext #wanderlust", "uri": "img/tough_mystery.jpg"}, {"n": 20, "file": "ygo_tough_luxury.png", "title": "One Luxury Trip or a Year of Weekends", "ig": "You get 10k for travel. One incredible luxury trip, or a whole year of weekend getaways?\nTwist: one unforgettable week, or 20 little escapes you'll always remember?", "tiktok": "10k to travel ONE luxury trip or a whole YEAR of weekend escapes?? pick", "pinterest": "One luxury trip or a year of weekend getaways for the same budget. How would you spend it?", "tags": "#travelbudget #weekendgetaway #luxurytravel #traveltips #wheretonext", "uri": "img/tough_luxury.jpg"}];
+var KEY='ygo_posted_v1';
+var used=JSON.parse(localStorage.getItem(KEY)||'[]');
+var showUsed=false;
+function save(){localStorage.setItem(KEY,JSON.stringify(used));}
+function isUsed(n){return used.indexOf(n)>-1;}
+function copyBtn(t){var b=document.createElement('button');b.className='copy';b.textContent='Copy';
+b.onclick=function(){navigator.clipboard.writeText(t).then(function(){b.textContent='Copied';b.classList.add('done');setTimeout(function(){b.textContent='Copy';b.classList.remove('done')},1400)})};return b}
+function platform(name,cap,tags){var w=document.createElement('div');w.className='plat';
+var h=document.createElement('div');h.className='phead';var n=document.createElement('span');n.className='pname';n.textContent=name;
+h.appendChild(n);h.appendChild(copyBtn(cap+"\n\n"+tags));var c=document.createElement('div');c.className='cap';c.textContent=cap;
+w.appendChild(h);w.appendChild(c);return w}
+function render(){
+  var wrap=document.getElementById('wrap');wrap.innerHTML='';
+  var shown=0;
+  POSTS.forEach(function(p){
+    var u=isUsed(p.n);
+    if(u && !showUsed) return;
+    shown++;
+    var card=document.createElement('div');card.className='card'+(u?' used':'');
+    card.innerHTML='<div class="imgwrap"><div class="num">'+p.n+'</div>'+(u?'<div class="badge">Posted</div>':'')+'<img src="'+p.uri+'" alt="'+p.title+'"></div><div class="ctitle">'+p.title+'</div>';
+    var act=document.createElement('div');act.className='actions';
+    var dl=document.createElement('a');dl.className='dlbtn';dl.href=p.uri;dl.setAttribute('download',p.file);dl.innerHTML='&#8595; Download';act.appendChild(dl);
+    var ub=document.createElement('button');
+    if(u){ub.className='unbtn';ub.textContent='Put back';ub.onclick=function(){used=used.filter(function(x){return x!==p.n});save();render();};}
+    else{ub.className='usebtn';ub.textContent='✓ Mark as posted';ub.onclick=function(){used.push(p.n);save();render();};}
+    act.appendChild(ub);card.appendChild(act);
+    var body=document.createElement('div');body.className='body';
+    body.appendChild(platform('Instagram',p.ig,p.tags));
+    body.appendChild(platform('TikTok',p.tiktok,p.tags));
+    body.appendChild(platform('Pinterest',p.pinterest,p.tags));
+    var tg=document.createElement('div');tg.className='plat tags';var hh=document.createElement('div');hh.className='phead';
+    var nn=document.createElement('span');nn.className='pname';nn.textContent='5 Niche Hashtags';hh.appendChild(nn);hh.appendChild(copyBtn(p.tags));
+    var l=document.createElement('div');l.className='tagline';l.textContent=p.tags;tg.appendChild(hh);tg.appendChild(l);body.appendChild(tg);
+    card.appendChild(body);wrap.appendChild(card);
+  });
+  if(shown===0){var e=document.createElement('div');e.className='empty';e.textContent='All posted. Tap "Show posted" to bring them back.';wrap.appendChild(e);}
+  document.getElementById('total').textContent=POSTS.length;
+  document.getElementById('left').textContent=POSTS.length-used.length;
+  document.getElementById('toggle').textContent=(showUsed?'Hide posted (':'Show posted (')+used.length+')';
+}
+document.getElementById('toggle').onclick=function(){showUsed=!showUsed;render();};
+document.getElementById('reset').onclick=function(){if(confirm('Bring all posts back to the list?')){used=[];save();render();}};
+render();
+</script></body></html>
