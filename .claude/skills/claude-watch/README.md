@@ -11,13 +11,31 @@ Point it at a tutorial, lecture, or talk (a URL or a local file) and it:
    five minutes still gets sampled instead of producing a single frame.
 3. **Pulls a timestamped transcript** — captions first (free), falling back to a
    Whisper API (Groq or OpenAI) only when captions are missing.
-4. Hands the frames + transcript to **Claude**, which reads every frame as an
-   image, OCRs the on-screen code/slides, and writes `notes.md` from a strict
-   template (TL;DR, key concepts, timestamped walkthrough, extracted code,
-   diagrams, open questions).
+4. **Renders the audio** into spectrogram + waveform images and a loudness
+   timeline (see "Watching with sound" below).
+5. Hands the frames + transcript + audio images to **Claude**, which reads every
+   frame as an image, OCRs the on-screen code/slides, characterizes the sound,
+   and writes `notes.md` from a strict template (TL;DR, key concepts, timestamped
+   walkthrough, extracted code, diagrams, audio, open questions).
 
 Everything is saved under `~/claude-watch/library/<slug>/` and is cache-aware:
 re-running the same source with the same flags is instant.
+
+## Watching with sound
+
+Claude has image vision but **no audio input** — it can't ingest raw sound. So
+the skill converts sound into things Claude *can* perceive:
+
+- **Spectrogram images** (`audio/spectrogram_*.png`) — Claude literally *sees*
+  the frequency-vs-time structure: speech vs music vs silence, build-ups, drops.
+- **A waveform image** (`audio/waveform_full.png`) — amplitude and pauses.
+- **A loudness timeline** (`audio.md`, LUFS via ffmpeg's `ebur128`) — Claude
+  *reads* energy and emphasis over time as data.
+
+This is "seeing + reading" the audio rather than hearing it — the honest ceiling
+of an image+text model — but in practice it reliably distinguishes music from
+speech, flags emphasis and silence, and anchors it all to timestamps. Skip it
+with `--no-audio`.
 
 ## Usage
 

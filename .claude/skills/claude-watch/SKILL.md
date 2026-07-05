@@ -1,12 +1,14 @@
 ---
 name: claude-watch
 description: >-
-  Give Claude the ability to "watch" a video and turn it into structured study
-  notes. Downloads the video (or reads a local file), samples scene-aware frames
-  with ffmpeg, pulls a timestamped transcript (captions first, Whisper API only
-  as a fallback), then Claude reads the frames as images and writes notes.md.
-  Use when the user shares a tutorial/lecture/talk video URL or file and wants
-  notes, a summary, key concepts, extracted code, or a walkthrough — e.g.
+  Give Claude the ability to "watch" a video — picture AND sound — and turn it
+  into structured study notes. Downloads the video (or reads a local file),
+  samples scene-aware frames with ffmpeg, pulls a timestamped transcript
+  (captions first, Whisper API fallback), and renders the audio track into
+  spectrogram + waveform images plus a loudness timeline. Claude then reads the
+  frames and the audio images and writes notes.md. Use when the user shares a
+  tutorial/lecture/talk video URL or file and wants notes, a summary, key
+  concepts, extracted code, a walkthrough, or a read on tone/energy/audio — e.g.
   "watch this video", "take notes on this lecture", "summarize this tutorial",
   "what's in this talk". Best for videos under ~30 min; use --start/--end for
   longer content.
@@ -15,9 +17,26 @@ description: >-
 # claude-watch
 
 Turn any tutorial or lecture video into structured, timestamped study notes.
-The heavy lifting (download, frame selection, transcription) happens in
-`scripts/watch.py`; **you** — Claude — supply the understanding by reading the
-extracted frames and writing the notes.
+The heavy lifting (download, frame selection, transcription, audio rendering)
+happens in `scripts/watch.py`; **you** — Claude — supply the understanding by
+reading the extracted frames + audio images and writing the notes.
+
+## How you actually "watch" (important)
+
+You have image vision but **no audio input channel** — you cannot ingest raw
+sound. This skill works around that by turning a video into things you *can*
+perceive:
+
+- **Picture → frame images** you read directly.
+- **Speech → a text transcript** you read.
+- **Sound → spectrogram + waveform images and a loudness timeline** — you *see*
+  the audio's frequency/energy structure and *read* its loudness as data.
+
+So when you describe the audio (music vs speech, energy, emphasis, pace,
+silences), be honest that you are inferring it from a visual/numeric
+representation, not from literally hearing it. Within that framing it is
+genuinely informative — a spectrogram plainly shows music vs voice, build-ups,
+drops, and silence; the loudness curve shows emphasis and pauses.
 
 ## When to use
 
@@ -62,16 +81,24 @@ Useful flags (all optional):
 | `--max-gap` | `45` | max seconds between sampled frames on static slides |
 | `--whisper` | `groq` | `groq` (cheap) or `openai`; only used if no captions |
 | `--no-whisper` | off | never call a paid API — captions or nothing |
+| `--no-audio` | off | skip the audio layer (spectrograms/waveform/loudness) |
+| `--audio-tiles` | `8` | max per-chunk spectrogram images for audio detail |
 | `--out-dir` | library | write somewhere specific instead of the library |
 | `--force` | off | ignore the cache and rebuild |
 
-### 3. Load the frames into context
+### 3. Load frames, transcript, and audio into context
 
-Read `manifest.json` in `out_dir` for the frame list (each has `file`,
-`seconds`, `timestamp`). **Read every frame image** in `frames_dir` with the
-Read tool so you can actually see what was on screen, and read `transcript.md`
-for the spoken words. The frames are named `frame_NNN_SECONDSs.jpg` and the
-manifest maps each to its timestamp.
+Read `manifest.json` in `out_dir` for the full inventory:
+
+- **Frames** (`frames` array + `frames_dir`) — **read every frame image** with
+  the Read tool so you can actually see what was on screen. Named
+  `frame_NNN_SECONDSs.jpg`, each mapped to its timestamp.
+- **Transcript** (`transcript.md`) — the spoken words, timestamped.
+- **Audio** (`audio` block + `audio.md` + `audio/` dir, when
+  `audio_available`) — **read the spectrogram and waveform images** (`audio/*.png`)
+  and the loudness curve in `audio.md`. Use them to characterize the sound:
+  speech vs music vs silence, energy/emphasis over time, pacing, and pauses.
+  Anchor observations to the timestamps on the images and in the curve.
 
 ### 4. Write the notes
 
@@ -109,6 +136,12 @@ summary. Do **not** just paste the transcript — the value is in your synthesis
 ## Diagrams & visuals
 - <describe any diagram/architecture/flow shown, with timestamp>
 
+## Audio
+<Read from the spectrogram/waveform images + loudness curve. e.g. mostly spoken
+narration, background music from mm:ss–mm:ss, a loud emphasis at mm:ss, a long
+pause at mm:ss. State that this is inferred from the audio's visual/numeric
+representation, not from hearing it. Omit this section if --no-audio was used.>
+
 ## Open questions
 - <things the video left unclear or that warrant follow-up>
 ```
@@ -123,8 +156,12 @@ summary. Do **not** just paste the transcript — the value is in your synthesis
   use) `--start`/`--end` to focus on the relevant section rather than blowing
   the frame budget across the whole thing.
 - **Missing transcript:** if `transcript_source` is `none`, work from the frames
-  alone and say so in the notes; offer to re-run with a Whisper key if the user
-  wants the spoken track.
+  and the audio images and say so in the notes; offer to re-run with a Whisper
+  key if the user wants the spoken words as text.
+- **Audio is inferred, not heard.** Read the spectrogram/waveform and loudness
+  curve, but never claim you "heard" anything — you are reading a visual/numeric
+  rendering of the sound. It's reliable for music-vs-speech, energy, and
+  silences; it is not a substitute for the transcript's actual words.
 - **Respect the cache.** A `"cached": true` result means the frames/transcript
   already exist in `out_dir` — just read and (re)write notes.
 

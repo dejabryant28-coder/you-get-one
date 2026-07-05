@@ -357,6 +357,11 @@ def get_transcript(video: Path, work: Path, args, start: float,
     if args.no_whisper:
         log("no captions found and --no-whisper set; skipping transcript")
         return [], "none"
+    env_key = {"groq": "GROQ_API_KEY", "openai": "OPENAI_API_KEY"}[args.whisper]
+    if not os.environ.get(env_key):
+        log(f"no captions and {env_key} not set; continuing without a transcript "
+            f"(set {env_key} or use captions for spoken words)")
+        return [], "none"
     segs = whisper_transcribe(video, work, args.whisper, start, end)
     return segs, f"whisper:{args.whisper}"
 
@@ -370,6 +375,166 @@ def write_transcript_md(segs: list[dict], path: Path) -> None:
     for s in segs:
         lines.append(f"- **[{s['timestamp']}]** {s['text']}")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+# --------------------------------------------------------------------------- #
+# audio analysis
+# --------------------------------------------------------------------------- #
+#
+# Claude cannot ingest raw audio — there is no audio input channel. What it CAN
+# do is read images and text. So we turn sound into both: spectrogram + waveform
+# images (which the model literally "sees") and a loudness timeline (which it
+# reads as data). That is the closest an image+text model gets to hearing.
+
+def extract_audio(video: Path, work: Path, start: float, end: float) -> Path | None:
+    """Extract the windowed audio track to a mono wav for analysis."""
+    audio = work / "audio_analysis.wav"
+    args = ["ffmpeg", "-hide_banner", "-nostats", "-y"]
+    if start > 0:
+        args += ["-ss", f"{start:.2f}"]
+    args += ["-i", str(video)]
+    if end and end > start:
+        args += ["-t", f"{end - start:.2f}"]
+    args += ["-ac", "1", "-ar", "22050", "-vn", str(audio)]
+    if run(args).returncode != 0 or not audio.exists() or audio.stat().st_size < 1024:
+        return None
+    return audio
+
+
+def render_spectrogram(src: Path, out_png: Path, label: str) -> bool:
+    vf = (f"showspectrumpic=s=1280x420:legend=1:scale=log:color=intensity,"
+          f"drawtext=text='{label}':fontcolor=white:fontsize=16:x=10:y=6:"
+          f"box=1:boxcolor=black@0.5")
+    ok = run(["ffmpeg", "-hide_banner", "-nostats", "-y", "-i", str(src),
+              "-lavfi", vf, str(out_png)]).returncode == 0
+    # drawtext may be unavailable in minimal builds; retry without the label.
+    if not (ok and out_png.exists()):
+        ok = run(["ffmpeg", "-hide_banner", "-nostats", "-y", "-i", str(src),
+                  "-lavfi", "showspectrumpic=s=1280x420:legend=1:scale=log:"
+                  "color=intensity", str(out_png)]).returncode == 0
+    return ok and out_png.exists()
+
+
+def render_waveform(src: Path, out_png: Path) -> bool:
+    ok = run(["ffmpeg", "-hide_banner", "-nostats", "-y", "-i", str(src),
+              "-lavfi", "showwavespic=s=1280x240:colors=0x33ccff",
+              str(out_png)]).returncode == 0
+    return ok and out_png.exists()
+
+
+def loudness_timeline(src: Path, work: Path, start_offset: float) -> list[dict]:
+    """Momentary loudness (LUFS) over time, via ffmpeg's ebur128 filter.
+
+    ebur128 only prints a summary to stderr; the per-frame values come from the
+    ametadata filter, which we route to a file and then parse.
+    """
+    meta = work / "loudness.txt"
+    run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(src),
+         "-af", f"ebur128=metadata=1,ametadata=mode=print:file={meta}",
+         "-f", "null", "-"])
+    if not meta.exists():
+        return []
+    points: list[dict] = []
+    t = None
+    for line in meta.read_text(errors="ignore").splitlines():
+        mt = re.search(r"pts_time:([0-9.]+)", line)
+        if mt:
+            t = float(mt.group(1))
+            continue
+        mm = re.search(r"lavfi\.r128\.M=(-?[0-9.]+)", line)
+        if mm and t is not None:
+            lufs = float(mm.group(1))
+            if lufs > -70:  # drop -120 silence/-inf sentinel readings
+                points.append({"seconds": round(t + start_offset, 1), "lufs": lufs})
+    return points
+
+
+def summarize_loudness(points: list[dict]) -> dict:
+    if not points:
+        return {}
+    vals = [p["lufs"] for p in points]
+    avg = sum(vals) / len(vals)
+    loud = max(points, key=lambda p: p["lufs"])
+    quiet = min(points, key=lambda p: p["lufs"])
+    # Sample the curve at ~12 evenly spaced points so notes can show a shape.
+    n = len(points)
+    idxs = sorted(set(int(i * (n - 1) / 11) for i in range(min(12, n))))
+    curve = [{"timestamp": fmt_ts(points[i]["seconds"]),
+              "lufs": round(points[i]["lufs"], 1)} for i in idxs]
+    return {
+        "average_lufs": round(avg, 1),
+        "loudest": {"timestamp": fmt_ts(loud["seconds"]), "lufs": round(loud["lufs"], 1)},
+        "quietest": {"timestamp": fmt_ts(quiet["seconds"]), "lufs": round(quiet["lufs"], 1)},
+        "curve": curve,
+    }
+
+
+def write_audio_md(summary: dict, tiles: list[dict], path: Path) -> None:
+    lines = ["# Audio", ""]
+    if summary:
+        lines += [
+            f"- **Average loudness:** {summary['average_lufs']} LUFS",
+            f"- **Loudest moment:** {summary['loudest']['lufs']} LUFS "
+            f"at {summary['loudest']['timestamp']}",
+            f"- **Quietest moment:** {summary['quietest']['lufs']} LUFS "
+            f"at {summary['quietest']['timestamp']}",
+            "",
+            "## Loudness over time",
+        ]
+        for pt in summary.get("curve", []):
+            lines.append(f"- [{pt['timestamp']}] {pt['lufs']} LUFS")
+        lines.append("")
+    lines.append("## Spectrogram / waveform images")
+    for t in tiles:
+        lines.append(f"- `{t['file']}` — {t['kind']} for {t['range']}")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def analyze_audio(video: Path, work: Path, out: Path, start: float, end: float,
+                  max_tiles: int) -> dict:
+    """Produce spectrogram/waveform images + a loudness timeline."""
+    audio = extract_audio(video, work, start, end)
+    if audio is None:
+        log("no analyzable audio track found; skipping audio layer")
+        return {"available": False}
+
+    adir = out / "audio"
+    adir.mkdir(parents=True, exist_ok=True)
+    tiles: list[dict] = []
+
+    # Whole-window overview (time is compressed, good for spotting structure).
+    if render_spectrogram(audio, adir / "spectrogram_full.png", "full"):
+        tiles.append({"file": "audio/spectrogram_full.png", "kind": "spectrogram",
+                      "range": f"{fmt_ts(start)}-{fmt_ts(end)}"})
+    if render_waveform(audio, adir / "waveform_full.png"):
+        tiles.append({"file": "audio/waveform_full.png", "kind": "waveform",
+                      "range": f"{fmt_ts(start)}-{fmt_ts(end)}"})
+
+    # Per-chunk detail spectrograms so fine structure isn't lost to compression.
+    window = max(0.0, end - start)
+    if window > 0 and max_tiles > 0:
+        chunk = max(30.0, window / max_tiles)
+        n = int(window // chunk) + (1 if window % chunk else 0)
+        for i in range(min(n, max_tiles)):
+            c0, c1 = i * chunk, min((i + 1) * chunk, window)
+            slice_wav = work / f"chunk_{i:02d}.wav"
+            run(["ffmpeg", "-hide_banner", "-nostats", "-y", "-ss", f"{c0:.2f}",
+                 "-i", str(audio), "-t", f"{c1 - c0:.2f}", str(slice_wav)])
+            if not slice_wav.exists():
+                continue
+            label = f"{fmt_ts(start + c0)}-{fmt_ts(start + c1)}"
+            png = adir / f"spectrogram_{i:02d}.png"
+            if render_spectrogram(slice_wav, png, label):
+                tiles.append({"file": f"audio/spectrogram_{i:02d}.png",
+                              "kind": "spectrogram", "range": label})
+
+    summary = summarize_loudness(loudness_timeline(audio, work, start))
+    if tiles or summary:
+        write_audio_md(summary, tiles, out / "audio.md")
+    log(f"audio: {len(tiles)} spectrogram/waveform image(s)"
+        + (f", loudness avg {summary['average_lufs']} LUFS" if summary else ""))
+    return {"available": bool(tiles or summary), "tiles": tiles,
+            "loudness": summary, "file": "audio.md" if (tiles or summary) else None}
 
 
 # --------------------------------------------------------------------------- #
@@ -396,6 +561,10 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Whisper provider used only when captions are missing")
     p.add_argument("--no-whisper", action="store_true",
                    help="never call a paid transcription API")
+    p.add_argument("--no-audio", action="store_true",
+                   help="skip the audio layer (spectrograms / waveform / loudness)")
+    p.add_argument("--audio-tiles", type=int, default=8,
+                   help="max per-chunk spectrogram images for audio detail")
     p.add_argument("--out-dir", default="",
                    help="override output dir (default: ~/claude-watch/library/<slug>)")
     p.add_argument("--force", action="store_true", help="ignore cache and rebuild")
@@ -404,7 +573,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def params_signature(args) -> str:
     keys = ["start", "end", "max_frames", "resolution", "scene_threshold",
-            "max_gap", "whisper", "no_whisper"]
+            "max_gap", "whisper", "no_whisper", "no_audio", "audio_tiles"]
     blob = json.dumps({k: getattr(args, k) for k in keys}, sort_keys=True)
     return hashlib.sha1(blob.encode()).hexdigest()[:10]
 
@@ -463,6 +632,12 @@ def main() -> None:
     if segs:
         write_transcript_md(segs, out / "transcript.md")
 
+    # ---- audio layer (spectrograms / waveform / loudness) ----
+    if args.no_audio:
+        audio_info = {"available": False}
+    else:
+        audio_info = analyze_audio(video, work, out, start, end, args.audio_tiles)
+
     # ---- manifest ----
     manifest = {
         "signature": sig,
@@ -482,6 +657,7 @@ def main() -> None:
             "segments": len(segs),
             "file": "transcript.md" if segs else None,
         },
+        "audio": audio_info,
         "out_dir": str(out),
     }
     manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
@@ -498,6 +674,9 @@ def main() -> None:
         "frame_count": len(frames),
         "transcript_file": str(out / "transcript.md") if segs else None,
         "transcript_source": transcript_source,
+        "audio_available": audio_info.get("available", False),
+        "audio_file": str(out / "audio.md") if audio_info.get("file") else None,
+        "audio_dir": str(out / "audio") if audio_info.get("available") else None,
         "title": meta.get("title", slug),
     }))
 
