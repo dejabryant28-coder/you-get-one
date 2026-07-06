@@ -51,16 +51,27 @@ code that appeared on screen, a step-by-step walkthrough, or visual feedback.
 
 Run these steps in order. Everything after step 3 is your job as the model.
 
-### 1. Preflight
+> **Where the scripts live:** they sit in this skill's own `scripts/` folder.
+> The commands below show the project path (`.claude/skills/claude-watch/…`); if
+> the skill is installed elsewhere (account upload, plugin), run the same scripts
+> from this skill's directory instead.
+
+### 1. Preflight (and self-install)
 
 ```bash
 python3 .claude/skills/claude-watch/scripts/preflight.py
 ```
 
-Read the JSON. `ffmpeg`/`ffprobe` are required — if missing, tell the user how
-to install them (the hints array explains). `yt-dlp` is only needed for URLs.
-Whisper keys are only needed when a video has no captions; captions are free and
-tried first, so **don't** ask the user for API keys up front.
+Read the JSON. If `ready` is `false` (e.g. `ffmpeg` missing), self-install the
+tools — works in any project, no setup hook needed:
+
+```bash
+bash .claude/skills/claude-watch/scripts/bootstrap.sh
+```
+
+Then re-run preflight. `yt-dlp` is only needed for URLs. Whisper keys are only
+needed when a video has no captions; captions are free and tried first, so
+**don't** ask the user for API keys up front.
 
 ### 2. Run the extractor
 
