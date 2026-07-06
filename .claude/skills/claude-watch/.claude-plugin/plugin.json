@@ -1,0 +1,11 @@
+{
+  "name": "claude-watch",
+  "description": "Give Claude the ability to watch a video (frames + audio + transcript, synced on a timeline) and produce a structured breakdown. Free and local via ffmpeg + yt-dlp + faster-whisper.",
+  "version": "0.3.0",
+  "author": {
+    "name": "dejabryant28-coder"
+  },
+  "homepage": "https://github.com/dejabryant28-coder/you-get-one",
+  "repository": "https://github.com/dejabryant28-coder/you-get-one",
+  "license": "MIT"
+}

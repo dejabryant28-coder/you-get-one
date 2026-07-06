@@ -55,6 +55,29 @@ python3 .claude/skills/claude-watch/scripts/watch.py "<url-or-path>" \
 
 See the flag table in [`SKILL.md`](./SKILL.md) for the full set.
 
+## Install / distribute
+
+This repo ships `claude-watch` three ways — pick by where you want it:
+
+**1. Claude Code plugin** (any repo, this stays a project skill too):
+```
+/plugin marketplace add dejabryant28-coder/you-get-one
+/plugin install claude-watch@you-get-one
+```
+
+**2. Upload as a Skill for Claude chat / Cowork:**
+```bash
+bash .claude/skills/claude-watch/scripts/build-skill.sh   # -> dist/claude-watch.zip
+```
+Then claude.ai → Settings → Capabilities → Skills → “+” and upload the zip.
+
+**3. As a connector / MCP integration** (works in chat where the host has ffmpeg):
+see [`mcp-server/README.md`](../../../mcp-server/README.md).
+
+> Every route needs the runtime tools below on the machine that runs it
+> (ffmpeg, yt-dlp, faster-whisper). In Claude Code / Cowork code sessions the
+> SessionStart hook installs them automatically.
+
 ## Requirements
 
 | tool | required? | install |

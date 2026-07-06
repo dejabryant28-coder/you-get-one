@@ -1,0 +1,9 @@
+# MCP server runtime
+mcp>=1.2.0
+
+# Pipeline tools (also needed by the skill itself)
+yt-dlp
+faster-whisper
+requests
+
+# System dependency (not pip-installable): ffmpeg must be on PATH.
