@@ -1,0 +1,19 @@
+{
+  "name": "you-get-one",
+  "owner": {
+    "name": "dejabryant28-coder"
+  },
+  "metadata": {
+    "description": "Skills from the You Get One travel content hub.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "claude-watch",
+      "source": "./.claude/skills/claude-watch",
+      "description": "Give Claude the ability to watch a video (frames + audio + transcript, synced on a timeline) and produce a structured breakdown. Free and local via ffmpeg + yt-dlp + faster-whisper.",
+      "version": "0.3.0",
+      "license": "MIT"
+    }
+  ]
+}

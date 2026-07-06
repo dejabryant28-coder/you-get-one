@@ -10,8 +10,11 @@ description: >-
   tutorial/lecture/talk video URL or file and wants notes, a summary, key
   concepts, extracted code, a walkthrough, or a read on tone/energy/audio — e.g.
   "watch this video", "take notes on this lecture", "summarize this tutorial",
-  "what's in this talk". Best for videos under ~30 min; use --start/--end for
-  longer content.
+  "what's in this talk". Also does creator "review" breakdowns — reverse-engineer
+  a video's hook, visuals, pacing, and structure and write a fresh script in the
+  same shape — for "review this video", "break down this reel/short", "what makes
+  this hook work", "reverse-engineer this". Best under ~30 min; use --start/--end
+  for longer content.
 ---
 
 # claude-watch
@@ -101,11 +104,23 @@ Read `manifest.json` in `out_dir` for the full inventory:
   speech vs music vs silence, energy/emphasis over time, pacing, and pauses.
   Anchor observations to the timestamps on the images and in the curve.
 
-### 4. Write the notes
+### 4. Write the output — pick a mode
 
-Synthesize the frames + transcript into `notes.md` inside `out_dir`, following
-the template below. Then report the path to the user and give a short spoken
-summary. Do **not** just paste the transcript — the value is in your synthesis.
+Two output shapes; choose by what the user wants:
+
+- **Study notes** (default) — to *learn the content* (tutorial/lecture/talk).
+  Write `notes.md` from the template below.
+- **Review** — to *reverse-engineer why a video works* and get a reusable
+  structure + a fresh script (reels/shorts/creator/travel content). Triggers:
+  "review", "break down this reel", "what makes the hook work",
+  "reverse-engineer", "rewrite in the same structure". Follow
+  [`references/review-template.md`](references/review-template.md) and write
+  `review.md`. For this mode, extract with `--max-gap 7 --scene-threshold 0.2`
+  so soft dissolves / fast cuts aren't missed.
+
+Synthesize the frames + transcript (+ audio) into the chosen file inside
+`out_dir`. Then report the path to the user and give a short spoken summary. Do
+**not** just paste the transcript — the value is in your synthesis.
 
 ## notes.md template
 
