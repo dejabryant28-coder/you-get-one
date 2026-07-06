@@ -38,7 +38,11 @@ from mcp.server.fastmcp import FastMCP, Image
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WATCH = REPO_ROOT / ".claude" / "skills" / "claude-watch" / "scripts" / "watch.py"
 
-mcp = FastMCP("claude-watch")
+# Bind host/port from env so the same file works locally and in a container
+# (Railway/Render/Fly set $PORT). Only used for the http transport.
+_HOST = os.environ.get("HOST", "0.0.0.0")
+_PORT = int(os.environ.get("PORT", "8000"))
+mcp = FastMCP("claude-watch", host=_HOST, port=_PORT)
 
 
 def _last_json_line(text: str) -> dict:
