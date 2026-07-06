@@ -79,8 +79,9 @@ Useful flags (all optional):
 | `--resolution` | `720` | raise to `1080` when on-screen text/code is tiny |
 | `--scene-threshold` | `0.3` | lower (e.g. `0.2`) to catch more subtle cuts |
 | `--max-gap` | `45` | max seconds between sampled frames on static slides |
-| `--whisper` | `groq` | `groq` (cheap) or `openai`; only used if no captions |
-| `--no-whisper` | off | never call a paid API — captions or nothing |
+| `--whisper` | `groq` | `local` (free, faster-whisper), `groq`, or `openai`; groq/openai fall back to local if no key |
+| `--whisper-model` | `base` | local model size: `tiny`/`base`/`small`/`medium` |
+| `--no-whisper` | off | never transcribe — captions or nothing |
 | `--no-audio` | off | skip the audio layer (spectrograms/waveform/loudness) |
 | `--audio-tiles` | `8` | max per-chunk spectrogram images for audio detail |
 | `--out-dir` | library | write somewhere specific instead of the library |

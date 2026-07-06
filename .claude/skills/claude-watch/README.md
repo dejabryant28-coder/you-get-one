@@ -9,8 +9,9 @@ Point it at a tutorial, lecture, or talk (a URL or a local file) and it:
 2. **Samples scene-aware frames** with `ffmpeg` — it detects scene changes and
    then fills long static gaps with "coverage-floor" frames, so a slide held for
    five minutes still gets sampled instead of producing a single frame.
-3. **Pulls a timestamped transcript** — captions first (free), falling back to a
-   Whisper API (Groq or OpenAI) only when captions are missing.
+3. **Pulls a timestamped transcript** — captions first (free), then **local
+   Whisper** (`faster-whisper`, free, no key), then a hosted Whisper API
+   (Groq/OpenAI) if you've set a key.
 4. **Renders the audio** into spectrogram + waveform images and a loudness
    timeline (see "Watching with sound" below).
 5. Hands the frames + transcript + audio images to **Claude**, which reads every
@@ -60,8 +61,14 @@ See the flag table in [`SKILL.md`](./SKILL.md) for the full set.
 |------|-----------|---------|
 | `ffmpeg` / `ffprobe` | **yes** | `brew install ffmpeg` · `apt-get install ffmpeg` |
 | `yt-dlp` | for URLs | `pip install yt-dlp` |
-| `requests` | for Whisper fallback | `pip install requests` |
-| `GROQ_API_KEY` or `OPENAI_API_KEY` | only if a video lacks captions | export in your shell |
+| `faster-whisper` | for free local transcription when captions are missing | `pip install faster-whisper` |
+| `requests` | for the hosted Whisper API path | `pip install requests` |
+| `GROQ_API_KEY` or `OPENAI_API_KEY` | optional — only if you prefer the hosted API over local | export in your shell |
+
+Transcription order: **captions → local Whisper → hosted API**. With
+`faster-whisper` installed you get transcripts for caption-less videos free and
+with no key; hosted APIs are used only if you set a key or pass `--whisper groq`
+with a key present.
 
 Run `python3 .claude/skills/claude-watch/scripts/preflight.py` to check your
 environment.

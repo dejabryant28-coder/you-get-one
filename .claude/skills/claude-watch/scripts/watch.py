@@ -336,6 +336,48 @@ def whisper_transcribe(video: Path, work: Path, provider: str,
     return segs
 
 
+def _extract_whisper_audio(video: Path, work: Path, start: float,
+                           end: float) -> Path | None:
+    audio = work / "audio_whisper.wav"
+    args = ["ffmpeg", "-hide_banner", "-nostats", "-y"]
+    if start > 0:
+        args += ["-ss", f"{start:.2f}"]
+    args += ["-i", str(video)]
+    if end and end > start:
+        args += ["-t", f"{end - start:.2f}"]
+    args += ["-ac", "1", "-ar", "16000", "-vn", str(audio)]
+    if run(args).returncode != 0 or not audio.exists():
+        return None
+    return audio
+
+
+def local_whisper_transcribe(video: Path, work: Path, start: float, end: float,
+                             model_size: str) -> list[dict] | None:
+    """Transcribe locally with faster-whisper — free, no API key needed."""
+    try:
+        from faster_whisper import WhisperModel
+    except ImportError:
+        return None
+    audio = _extract_whisper_audio(video, work, start, end)
+    if audio is None:
+        return None
+    log(f"transcribing locally with faster-whisper ({model_size}, cpu/int8) ...")
+    try:
+        model = WhisperModel(model_size, device="cpu", compute_type="int8")
+        segments, _ = model.transcribe(str(audio), language="en", vad_filter=True)
+    except Exception as e:  # model download / decode failures shouldn't be fatal
+        log(f"local whisper failed: {e}")
+        return None
+    offset = start if start > 0 else 0.0
+    segs: list[dict] = []
+    for s in segments:
+        t = float(s.start) + offset
+        text = (s.text or "").strip()
+        if text:
+            segs.append({"seconds": round(t, 2), "timestamp": fmt_ts(t), "text": text})
+    return segs
+
+
 def get_transcript(video: Path, work: Path, args, start: float,
                    end: float) -> tuple[list[dict], str]:
     # 1) captions downloaded by yt-dlp, or a sibling .vtt/.srt for local files.
@@ -357,13 +399,25 @@ def get_transcript(video: Path, work: Path, args, start: float,
     if args.no_whisper:
         log("no captions found and --no-whisper set; skipping transcript")
         return [], "none"
+
+    # Explicit local request, or a hosted provider without its key -> try local
+    # faster-whisper (free, no key). Only give up if local isn't available.
+    if args.whisper == "local":
+        segs = local_whisper_transcribe(video, work, start, end, args.whisper_model)
+        return (segs, "whisper:local") if segs else ([], "none")
+
     env_key = {"groq": "GROQ_API_KEY", "openai": "OPENAI_API_KEY"}[args.whisper]
-    if not os.environ.get(env_key):
-        log(f"no captions and {env_key} not set; continuing without a transcript "
-            f"(set {env_key} or use captions for spoken words)")
-        return [], "none"
-    segs = whisper_transcribe(video, work, args.whisper, start, end)
-    return segs, f"whisper:{args.whisper}"
+    if os.environ.get(env_key):
+        segs = whisper_transcribe(video, work, args.whisper, start, end)
+        return segs, f"whisper:{args.whisper}"
+
+    log(f"no captions and {env_key} not set; trying free local whisper ...")
+    segs = local_whisper_transcribe(video, work, start, end, args.whisper_model)
+    if segs:
+        return segs, "whisper:local"
+    log("local whisper unavailable (pip install faster-whisper); "
+        "continuing without a transcript")
+    return [], "none"
 
 
 # --------------------------------------------------------------------------- #
@@ -557,8 +611,13 @@ def build_parser() -> argparse.ArgumentParser:
                    help="scene-change sensitivity 0..1 (lower = more frames)")
     p.add_argument("--max-gap", type=float, default=45.0,
                    help="max seconds between sampled frames")
-    p.add_argument("--whisper", choices=["groq", "openai"], default="groq",
-                   help="Whisper provider used only when captions are missing")
+    p.add_argument("--whisper", choices=["groq", "openai", "local"], default="groq",
+                   help="Whisper backend when captions are missing; 'local' uses "
+                        "faster-whisper (free, no key). groq/openai fall back to "
+                        "local automatically if their key isn't set.")
+    p.add_argument("--whisper-model", default="base",
+                   help="faster-whisper model size for local mode "
+                        "(tiny/base/small/medium)")
     p.add_argument("--no-whisper", action="store_true",
                    help="never call a paid transcription API")
     p.add_argument("--no-audio", action="store_true",
@@ -573,7 +632,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def params_signature(args) -> str:
     keys = ["start", "end", "max_frames", "resolution", "scene_threshold",
-            "max_gap", "whisper", "no_whisper", "no_audio", "audio_tiles"]
+            "max_gap", "whisper", "whisper_model", "no_whisper", "no_audio",
+            "audio_tiles"]
     blob = json.dumps({k: getattr(args, k) for k in keys}, sort_keys=True)
     return hashlib.sha1(blob.encode()).hexdigest()[:10]
 

@@ -29,6 +29,11 @@ def main() -> None:
         report["requests"] = True
     except ImportError:
         report["requests"] = False
+    try:
+        import faster_whisper  # noqa: F401
+        report["faster_whisper"] = True
+    except ImportError:
+        report["faster_whisper"] = False
 
     hints = []
     if not report["ffmpeg"] or not report["ffprobe"]:
@@ -37,10 +42,10 @@ def main() -> None:
     if not report["yt_dlp"]:
         hints.append("Install yt-dlp (`pip install yt-dlp`) to handle URLs; "
                      "not needed for local files.")
-    if not (report["groq_key"] or report["openai_key"]):
-        hints.append("No Whisper key found. Captions are used when available "
-                     "(free); set GROQ_API_KEY or OPENAI_API_KEY only if you "
-                     "need transcription for videos without captions.")
+    if not report["faster_whisper"] and not (report["groq_key"] or report["openai_key"]):
+        hints.append("For caption-less videos, install faster-whisper "
+                     "(`pip install faster-whisper`) for free local transcription "
+                     "with no API key. Captions are always tried first.")
 
     report["hints"] = hints
     report["ready"] = report["ffmpeg"] and report["ffprobe"]
