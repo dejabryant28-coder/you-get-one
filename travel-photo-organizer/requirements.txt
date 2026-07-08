@@ -1,0 +1,5 @@
+composio>=0.7.0
+requests>=2.31
+Pillow>=10.0
+reverse_geocoder>=1.5.1
+pycountry>=23.12
