@@ -1,8 +1,14 @@
 {
   "root_folder_name": "Travel Photos",
-  "inbox_folder_name": "_Inbox",
   "logs_folder_name": "_Logs",
   "log_file_name": "photo-log.csv",
+
+  "source_folder_candidates": [
+    "/Pictures/Samsung Gallery/DCIM/Camera",
+    "/Pictures/Samsung Gallery/Camera",
+    "/Pictures/Camera Roll",
+    "/Pictures/Camera imports"
+  ],
 
   "test_mode": true,
   "max_photos_per_run": 5,
