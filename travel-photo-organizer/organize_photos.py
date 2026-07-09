@@ -609,6 +609,13 @@ def process(cfg, limit, dry_run):
                     gps[0], gps[1], cfg.get("unclear_location_km_threshold", 50),
                     cfg.get("big_city_population", 250000))
             row.update(detected_city=city, detected_country=country)
+            # Country allow-list: GPS that resolves to a country you've
+            # never visited is almost always corrupted EXIF or media saved
+            # from someone else — route it to review, don't invent folders.
+            allowed = cfg.get("allowed_countries") or []
+            if clear and allowed and country not in allowed:
+                clear = False
+                print(f"  '{country}' not in allowed_countries -> review")
             if clear:
                 # One folder per country; home-country photos group by state.
                 place = country

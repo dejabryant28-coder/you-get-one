@@ -134,6 +134,7 @@ just run it on any schedule you like:
 | `use_online_geocoding` | `true` | exact city + landmark via OpenStreetMap; `false` = fully offline, city-level only |
 | `append_place_to_copy_name` | `true` | copies get city + landmark in their name (originals never renamed) |
 | `home_country` | `United States` | photos in this country are foldered by state instead of country |
+| `allowed_countries` | traveler's country list | GPS resolving to a country not on the list → Needs Review (catches corrupted EXIF / saved media); empty list = allow all |
 
 ## Guarantees
 
