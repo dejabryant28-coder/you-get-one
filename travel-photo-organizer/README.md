@@ -48,7 +48,7 @@ Phone setup checklist (one time):
 | 2 | List photos in the camera folder with metadata (`photo.takenDateTime`, `location`, content hashes) | `ONE_DRIVE_LIST_FOLDER_CHILDREN` |
 | 3 | Skip already-processed files (by item ID) and duplicates (by SHA-1/QuickXor content hash) | local state + `_Logs/photo-log.csv` |
 | 4 | Read date taken + GPS from OneDrive's metadata; if missing, download the file and parse EXIF locally (Pillow) | `ONE_DRIVE_DOWNLOAD_FILE` (fallback only) |
-| 5 | Reverse-geocode GPS → city/country **offline** (`reverse_geocoder` package — coordinates never leave your machine) | — |
+| 5 | Reverse-geocode GPS → city/country **offline** (`reverse-geocode` package — coordinates never leave your machine); tiny villages roll up to their municipality | — |
 | 6 | Ensure `Travel Photos/<Year>/<Country>/<City>/<Month Year or Trip>` exists | `ONE_DRIVE_ONEDRIVE_CREATE_FOLDER` |
 | 7 | **Server-side copy** the photo into the destination (original in the camera folder untouched) | `ONE_DRIVE_COPY_ITEM` |
 | 8 | No GPS → `Needs Review/No Location`; ambiguous GPS (nearest known town > 50 km away) → `Needs Review/Unclear Location` | same as 6–7 |
@@ -127,6 +127,7 @@ just run it on any schedule you like:
 | `include_videos` | `false` | also organize videos (most lack GPS → Needs Review) |
 | `skip_name_patterns` | `["screenshot", "-WA0"]` | never organize matching files (screenshots, WhatsApp media) |
 | `unclear_location_km_threshold` | `50` | GPS farther than this from any known town → Unclear Location |
+| `big_city_population` | `250000` | matched places smaller than this use their municipality/state as the City folder (Accra not Osu, Lisbon not Intendente, Ensenada not Rancho Verde) |
 | `trips` | example entry | date ranges that use a trip name instead of "July 2026" as the leaf folder |
 
 ## Guarantees

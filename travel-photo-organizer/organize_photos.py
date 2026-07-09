@@ -325,22 +325,25 @@ def haversine_km(a, b):
     return 2 * 6371 * math.asin(math.sqrt(h))
 
 
-def reverse_geocode(lat, lng, unclear_km):
-    """Offline reverse geocode. Returns (city, country, clear: bool)."""
-    import pycountry
-    import reverse_geocoder
+def reverse_geocode(lat, lng, unclear_km, big_city_population=250000):
+    """Offline reverse geocode. Returns (city, country, clear: bool).
 
-    hit = reverse_geocoder.search([(lat, lng)], mode=1)[0]
-    city = hit.get("name") or ""
-    cc = hit.get("cc") or ""
-    country = cc
-    if cc:
-        rec = pycountry.countries.get(alpha_2=cc)
-        if rec:
-            country = getattr(rec, "common_name", None) or rec.name
-    try:
-        dist = haversine_km((lat, lng), (float(hit["lat"]), float(hit["lon"])))
-    except (KeyError, ValueError):
+    The GeoNames data behind reverse-geocode often matches neighborhoods
+    or villages (Osu, Intendente, Rancho Verde), so unless the matched
+    place is itself a big city, roll up to its municipality/state —
+    giving Accra, Lisbon, Ensenada instead."""
+    import reverse_geocode as rg
+
+    hit = rg.search([(lat, lng)])[0]
+    city = hit.get("city") or ""
+    if (hit.get("population") or 0) < big_city_population:
+        city = hit.get("county") or hit.get("state") or city
+        for suffix in (" County", " Municipality", " District"):
+            city = city.removesuffix(suffix)
+    country = hit.get("country") or hit.get("country_code") or ""
+    if "latitude" in hit and "longitude" in hit:
+        dist = haversine_km((lat, lng), (hit["latitude"], hit["longitude"]))
+    else:
         dist = float("inf")
     clear = bool(city and country) and dist <= unclear_km
     return city, country, clear
@@ -552,7 +555,8 @@ def process(cfg, limit, dry_run):
             print("  no GPS data -> Needs Review / No Location")
         else:
             city, country, clear = reverse_geocode(
-                gps[0], gps[1], cfg.get("unclear_location_km_threshold", 50))
+                gps[0], gps[1], cfg.get("unclear_location_km_threshold", 50),
+                cfg.get("big_city_population", 250000))
             row.update(detected_city=city, detected_country=country)
             if clear:
                 dest_parts = [str(taken.year), country, city,

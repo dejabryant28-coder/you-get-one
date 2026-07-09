@@ -18,6 +18,7 @@
   "skip_name_patterns": ["screenshot", "-WA0"],
 
   "unclear_location_km_threshold": 50,
+  "big_city_population": 250000,
 
   "trips": [
     {
