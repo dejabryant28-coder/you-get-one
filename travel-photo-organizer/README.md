@@ -12,10 +12,12 @@ OneDrive/
     │   ├── No Location/                   ← photos with no GPS data
     │   └── Unclear Location/              ← GPS present but ambiguous
     └── 2026/
-        ├── Ghana/Accra, Ghana/July 2026/
-        ├── Mexico/Ensenada, Baja California/May 2026/
-        └── Portugal/Lisbon, Portugal/July 2026/
-            └── 20260704_181503 — Torre de Belém.jpg
+        ├── Ghana/           ← one folder per country (international)
+        ├── Mexico/
+        │   └── 20260511_143105 — Villa de Juárez — Viña de Liceaga.jpg
+        ├── Egypt/
+        └── California/      ← domestic photos group by state
+            └── 20260607_… — Long Beach — Long Beach Arena.mp4
 ```
 
 ## Why OneDrive (and not Google Photos)
@@ -50,8 +52,8 @@ Phone setup checklist (one time):
 | 3 | Skip already-processed files (by item ID) and duplicates (by SHA-1/QuickXor content hash) | local state + `_Logs/photo-log.csv` |
 | 4 | Read date taken + GPS from OneDrive's metadata; if missing, download the file and parse EXIF locally (Pillow) | `ONE_DRIVE_DOWNLOAD_FILE` (fallback only) |
 | 5 | Reverse-geocode GPS → exact city, state, country **and landmark/POI** via OpenStreetMap Nominatim (free, no account; only coordinates are sent — never photos or names). Offline fallback (`reverse-geocode` package) if unreachable or disabled | — |
-| 6 | Ensure `Travel Photos/<Year>/<Country>/<City>/<Month Year or Trip>` exists | `ONE_DRIVE_ONEDRIVE_CREATE_FOLDER` |
-| 7 | **Server-side copy** into `<Year>/<Country>/<City, State>/<Month or Trip>`; the copy is named with its landmark (`IMG — Viña de Liceaga.jpg`); originals untouched | `ONE_DRIVE_COPY_ITEM` |
+| 6 | Ensure `Travel Photos/<Year>/<Country>` (or `<Year>/<State>` for domestic) exists | `ONE_DRIVE_ONEDRIVE_CREATE_FOLDER` |
+| 7 | **Server-side copy** into the country/state folder; the copy is named with its city + landmark (`IMG — Villa de Juárez — Viña de Liceaga.jpg`); originals untouched | `ONE_DRIVE_COPY_ITEM` |
 | 8 | No GPS → `Needs Review/No Location`; ambiguous GPS (nearest known town > 50 km away) → `Needs Review/Unclear Location` | same as 6–7 |
 | 9 | Append a row per photo to `_Logs/photo-log.csv` (file name, date taken, city, country, folder path, upload status, duplicate status) | `ONE_DRIVE_ONEDRIVE_CREATE_TEXT_FILE` (replace mode) |
 
@@ -130,8 +132,8 @@ just run it on any schedule you like:
 | `unclear_location_km_threshold` | `50` | GPS farther than this from any known town → Unclear Location |
 | `big_city_population` | `250000` | offline fallback only: places smaller than this roll up to their municipality (Accra not Osu) |
 | `use_online_geocoding` | `true` | exact city + landmark via OpenStreetMap; `false` = fully offline, city-level only |
-| `append_landmark_to_copy_name` | `true` | copies get the landmark in their name, e.g. `IMG — Equ Hotel.jpg` (originals never renamed) |
-| `trips` | example entry | date ranges that use a trip name instead of "July 2026" as the leaf folder |
+| `append_place_to_copy_name` | `true` | copies get city + landmark in their name (originals never renamed) |
+| `home_country` | `United States` | photos in this country are foldered by state instead of country |
 
 ## Guarantees
 

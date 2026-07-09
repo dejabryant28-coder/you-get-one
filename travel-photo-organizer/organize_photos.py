@@ -379,16 +379,6 @@ def reverse_geocode_online(lat, lng):
     return result
 
 
-def city_folder_name(city, state, country):
-    """'San Diego, California' / 'Ensenada, Baja California' — falls back
-    to 'Lisbon, Portugal' when there is no distinct state."""
-    if state and state.lower() != city.lower():
-        return f"{city}, {state}"
-    if country and country.lower() != city.lower():
-        return f"{city}, {country}"
-    return city
-
-
 def reverse_geocode(lat, lng, unclear_km, big_city_population=250000):
     """Offline reverse geocode (fallback when Nominatim is off/unreachable).
     Returns (city, state, country, clear: bool).
@@ -481,19 +471,6 @@ def is_image(item, include_videos):
     if mime.startswith("image/"):
         return True
     return include_videos and mime.startswith("video/")
-
-
-def leaf_folder_name(taken, trips):
-    """'July 2026' by default, or a configured trip name if the date matches."""
-    for trip in trips or []:
-        try:
-            start = datetime.strptime(trip["start"], "%Y-%m-%d")
-            end = datetime.strptime(trip["end"], "%Y-%m-%d")
-        except (KeyError, ValueError):
-            continue
-        if start.date() <= taken.date() <= end.date():
-            return trip["name"]
-    return taken.strftime("%B %Y")
 
 
 def should_skip_name(name, patterns):
@@ -633,10 +610,12 @@ def process(cfg, limit, dry_run):
                     cfg.get("big_city_population", 250000))
             row.update(detected_city=city, detected_country=country)
             if clear:
-                city_dir = city_folder_name(city, state, country)
-                dest_parts = [str(taken.year), country, city_dir,
-                              leaf_folder_name(taken, cfg.get("trips"))]
-                where = f"{country} / {city_dir}"
+                # One folder per country; home-country photos group by state.
+                place = country
+                if country == cfg.get("home_country", "United States") and state:
+                    place = state
+                dest_parts = [str(taken.year), place]
+                where = f"{place} / {city}"
                 if row["landmark"]:
                     where += f" ({row['landmark']})"
                 print(f"  {gps[0]:.4f},{gps[1]:.4f} -> {where}")
@@ -648,12 +627,14 @@ def process(cfg, limit, dry_run):
         path_str = "/".join([root_name] + dest_parts)
         row["folder_path"] = path_str
 
-        # Name the COPY with the landmark (originals are never renamed).
+        # Name the COPY with city + landmark (originals are never renamed).
         copy_name = name
-        if row["landmark"] and cfg.get("append_landmark_to_copy_name", True):
-            stem, _, ext = name.rpartition(".")
-            copy_name = (f"{stem} — {row['landmark']}.{ext}" if ext
-                         else f"{name} — {row['landmark']}")
+        if cfg.get("append_place_to_copy_name", True):
+            extra = [x for x in (row["detected_city"], row["landmark"]) if x]
+            if extra:
+                stem, _, ext = name.rpartition(".")
+                suffix = " — " + " — ".join(extra)
+                copy_name = f"{stem}{suffix}.{ext}" if ext else name + suffix
 
         try:
             status = drive.copy_file(item_id, dest_id, copy_name)
