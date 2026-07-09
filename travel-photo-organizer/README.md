@@ -12,9 +12,10 @@ OneDrive/
     │   ├── No Location/                   ← photos with no GPS data
     │   └── Unclear Location/              ← GPS present but ambiguous
     └── 2026/
-        ├── Ghana/Accra/July 2026/
-        ├── Nigeria/Lagos/July 2026/
-        └── Portugal/Lisbon/July 2026/
+        ├── Ghana/Accra, Ghana/July 2026/
+        ├── Mexico/Ensenada, Baja California/May 2026/
+        └── Portugal/Lisbon, Portugal/July 2026/
+            └── 20260704_181503 — Torre de Belém.jpg
 ```
 
 ## Why OneDrive (and not Google Photos)
@@ -48,9 +49,9 @@ Phone setup checklist (one time):
 | 2 | List photos in the camera folder with metadata (`photo.takenDateTime`, `location`, content hashes) | `ONE_DRIVE_LIST_FOLDER_CHILDREN` |
 | 3 | Skip already-processed files (by item ID) and duplicates (by SHA-1/QuickXor content hash) | local state + `_Logs/photo-log.csv` |
 | 4 | Read date taken + GPS from OneDrive's metadata; if missing, download the file and parse EXIF locally (Pillow) | `ONE_DRIVE_DOWNLOAD_FILE` (fallback only) |
-| 5 | Reverse-geocode GPS → city/country **offline** (`reverse-geocode` package — coordinates never leave your machine); tiny villages roll up to their municipality | — |
+| 5 | Reverse-geocode GPS → exact city, state, country **and landmark/POI** via OpenStreetMap Nominatim (free, no account; only coordinates are sent — never photos or names). Offline fallback (`reverse-geocode` package) if unreachable or disabled | — |
 | 6 | Ensure `Travel Photos/<Year>/<Country>/<City>/<Month Year or Trip>` exists | `ONE_DRIVE_ONEDRIVE_CREATE_FOLDER` |
-| 7 | **Server-side copy** the photo into the destination (original in the camera folder untouched) | `ONE_DRIVE_COPY_ITEM` |
+| 7 | **Server-side copy** into `<Year>/<Country>/<City, State>/<Month or Trip>`; the copy is named with its landmark (`IMG — Viña de Liceaga.jpg`); originals untouched | `ONE_DRIVE_COPY_ITEM` |
 | 8 | No GPS → `Needs Review/No Location`; ambiguous GPS (nearest known town > 50 km away) → `Needs Review/Unclear Location` | same as 6–7 |
 | 9 | Append a row per photo to `_Logs/photo-log.csv` (file name, date taken, city, country, folder path, upload status, duplicate status) | `ONE_DRIVE_ONEDRIVE_CREATE_TEXT_FILE` (replace mode) |
 
@@ -124,10 +125,12 @@ just run it on any schedule you like:
 | `root_folder_name` | `Travel Photos` | the only OneDrive folder ever written to |
 | `source_folder_candidates` | Samsung Gallery / Camera Roll paths | where to look for synced camera photos (first match wins; read-only) |
 | `test_mode` / `max_photos_per_run` | `true` / `5` | safety limit until you disable it |
-| `include_videos` | `false` | also organize videos (most lack GPS → Needs Review) |
+| `include_videos` | `true` | organize videos too (phone videos carry GPS just like photos) |
 | `skip_name_patterns` | `["screenshot", "-WA0"]` | never organize matching files (screenshots, WhatsApp media) |
 | `unclear_location_km_threshold` | `50` | GPS farther than this from any known town → Unclear Location |
-| `big_city_population` | `250000` | matched places smaller than this use their municipality/state as the City folder (Accra not Osu, Lisbon not Intendente, Ensenada not Rancho Verde) |
+| `big_city_population` | `250000` | offline fallback only: places smaller than this roll up to their municipality (Accra not Osu) |
+| `use_online_geocoding` | `true` | exact city + landmark via OpenStreetMap; `false` = fully offline, city-level only |
+| `append_landmark_to_copy_name` | `true` | copies get the landmark in their name, e.g. `IMG — Equ Hotel.jpg` (originals never renamed) |
 | `trips` | example entry | date ranges that use a trip name instead of "July 2026" as the leaf folder |
 
 ## Guarantees
@@ -135,6 +138,6 @@ just run it on any schedule you like:
 - Originals in the camera folder are **never deleted, renamed, edited, or moved**.
 - Nothing is **ever shared** — no sharing API is called anywhere.
 - Nothing is **ever overwritten** — copies fail safely if a name collides.
-- GPS coordinates are geocoded **offline** and never sent to third parties.
+- Geocoding sends **only GPS coordinates** to OpenStreetMap's nonprofit Nominatim service — never photos, names, or anything else. Set `use_online_geocoding: false` for fully-offline geocoding (city-level only, no landmarks).
 - Duplicates (identical content, by hash) are detected and skipped.
 - Every photo's outcome is recorded in `Travel Photos/_Logs/photo-log.csv`.

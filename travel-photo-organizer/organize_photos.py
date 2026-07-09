@@ -60,8 +60,8 @@ STATE_PATH = HERE / "state" / "processed.json"
 
 LOG_COLUMNS = [
     "file_name", "date_taken", "detected_city", "detected_country",
-    "folder_path", "upload_status", "duplicate_status",
-    "content_hash", "source_item_id", "processed_at_utc",
+    "landmark", "address", "folder_path", "upload_status",
+    "duplicate_status", "content_hash", "source_item_id", "processed_at_utc",
 ]
 
 CHILD_FIELDS = ["id", "name", "size", "file", "folder", "photo", "location",
@@ -325,8 +325,73 @@ def haversine_km(a, b):
     return 2 * 6371 * math.asin(math.sqrt(h))
 
 
+NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
+POI_CATEGORIES = {"amenity", "tourism", "leisure", "shop", "craft", "historic",
+                  "building", "man_made", "natural", "aeroway", "office"}
+_geo_cache, _last_geo_call = {}, [0.0]
+
+
+def sanitize_name(name, max_len=60):
+    """Make a string safe as a OneDrive folder/file-name fragment."""
+    name = re.sub(r"\s*\([^)]*\)", "", name)          # drop parentheticals
+    name = re.sub(r'[<>:"/\\|?*]', "-", name).strip(" .")
+    return name[:max_len].strip()
+
+
+def reverse_geocode_online(lat, lng):
+    """OpenStreetMap Nominatim lookup (free, no account). Sends ONLY the
+    coordinates — never photos or file names. Returns
+    (city, country, landmark, address) or None on failure.
+    Rate-limited to 1 request/second per Nominatim's usage policy;
+    results are cached per ~11 m grid cell."""
+    key = (round(lat, 4), round(lng, 4))
+    if key in _geo_cache:
+        return _geo_cache[key]
+    wait = 1.1 - (time.time() - _last_geo_call[0])
+    if wait > 0:
+        time.sleep(wait)
+    try:
+        r = requests.get(NOMINATIM_URL, params={
+            "lat": lat, "lon": lng, "format": "jsonv2",
+            "zoom": 18, "accept-language": "en",
+        }, headers={"User-Agent": "travel-photo-organizer/1.0 (personal use)"},
+            timeout=30)
+        _last_geo_call[0] = time.time()
+        r.raise_for_status()
+        d = r.json()
+    except Exception:
+        _last_geo_call[0] = time.time()
+        return None
+
+    addr = d.get("address") or {}
+    city = (addr.get("city") or addr.get("town") or addr.get("village")
+            or addr.get("municipality") or addr.get("county") or "")
+    city = sanitize_name(re.sub(r"^(Municipio de|Municipality of)\s+", "", city))
+    for suffix in (" County", " Municipality", " District"):
+        city = city.removesuffix(suffix)
+    state = sanitize_name(addr.get("state") or addr.get("region") or "")
+    country = addr.get("country") or ""
+    landmark = ""
+    if d.get("category") in POI_CATEGORIES and d.get("name"):
+        landmark = sanitize_name(d["name"])
+    result = (city, state, country, landmark, d.get("display_name", ""))
+    _geo_cache[key] = result
+    return result
+
+
+def city_folder_name(city, state, country):
+    """'San Diego, California' / 'Ensenada, Baja California' — falls back
+    to 'Lisbon, Portugal' when there is no distinct state."""
+    if state and state.lower() != city.lower():
+        return f"{city}, {state}"
+    if country and country.lower() != city.lower():
+        return f"{city}, {country}"
+    return city
+
+
 def reverse_geocode(lat, lng, unclear_km, big_city_population=250000):
-    """Offline reverse geocode. Returns (city, country, clear: bool).
+    """Offline reverse geocode (fallback when Nominatim is off/unreachable).
+    Returns (city, state, country, clear: bool).
 
     The GeoNames data behind reverse-geocode often matches neighborhoods
     or villages (Osu, Intendente, Rancho Verde), so unless the matched
@@ -340,13 +405,14 @@ def reverse_geocode(lat, lng, unclear_km, big_city_population=250000):
         city = hit.get("county") or hit.get("state") or city
         for suffix in (" County", " Municipality", " District"):
             city = city.removesuffix(suffix)
+    state = hit.get("state") or ""
     country = hit.get("country") or hit.get("country_code") or ""
     if "latitude" in hit and "longitude" in hit:
         dist = haversine_km((lat, lng), (hit["latitude"], hit["longitude"]))
     else:
         dist = float("inf")
     clear = bool(city and country) and dist <= unclear_km
-    return city, country, clear
+    return city, state, country, clear
 
 
 # ----------------------------------------------------------------- state ---
@@ -554,14 +620,26 @@ def process(cfg, limit, dry_run):
             dest_parts = ["Needs Review", "No Location"]
             print("  no GPS data -> Needs Review / No Location")
         else:
-            city, country, clear = reverse_geocode(
-                gps[0], gps[1], cfg.get("unclear_location_km_threshold", 50),
-                cfg.get("big_city_population", 250000))
+            # Exact place via OpenStreetMap (city + landmark), offline fallback.
+            hit = (reverse_geocode_online(gps[0], gps[1])
+                   if cfg.get("use_online_geocoding", True) else None)
+            if hit and hit[0] and hit[2]:
+                city, state, country, landmark, address = hit
+                clear = True
+                row.update(landmark=landmark, address=address)
+            else:
+                city, state, country, clear = reverse_geocode(
+                    gps[0], gps[1], cfg.get("unclear_location_km_threshold", 50),
+                    cfg.get("big_city_population", 250000))
             row.update(detected_city=city, detected_country=country)
             if clear:
-                dest_parts = [str(taken.year), country, city,
+                city_dir = city_folder_name(city, state, country)
+                dest_parts = [str(taken.year), country, city_dir,
                               leaf_folder_name(taken, cfg.get("trips"))]
-                print(f"  {gps[0]:.4f},{gps[1]:.4f} -> {country} / {city}")
+                where = f"{country} / {city_dir}"
+                if row["landmark"]:
+                    where += f" ({row['landmark']})"
+                print(f"  {gps[0]:.4f},{gps[1]:.4f} -> {where}")
             else:
                 dest_parts = ["Needs Review", "Unclear Location"]
                 print("  GPS present but ambiguous -> Needs Review / Unclear Location")
@@ -570,8 +648,15 @@ def process(cfg, limit, dry_run):
         path_str = "/".join([root_name] + dest_parts)
         row["folder_path"] = path_str
 
+        # Name the COPY with the landmark (originals are never renamed).
+        copy_name = name
+        if row["landmark"] and cfg.get("append_landmark_to_copy_name", True):
+            stem, _, ext = name.rpartition(".")
+            copy_name = (f"{stem} — {row['landmark']}.{ext}" if ext
+                         else f"{name} — {row['landmark']}")
+
         try:
-            status = drive.copy_file(item_id, dest_id, name)
+            status = drive.copy_file(item_id, dest_id, copy_name)
             row["upload_status"] = status
             print(f"  {status} -> {path_str}")
         except Exception as e:

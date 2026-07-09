@@ -2,29 +2,29 @@
   "root_folder_name": "Travel Photos",
   "logs_folder_name": "_Logs",
   "log_file_name": "photo-log.csv",
-
   "source_folder_candidates": [
     "/Pictures/Samsung Gallery/DCIM/Camera",
     "/Pictures/Samsung Gallery/Camera",
     "/Pictures/Camera Roll",
     "/Pictures/Camera imports"
   ],
-
   "test_mode": true,
   "max_photos_per_run": 5,
   "dry_run": false,
-
-  "include_videos": false,
-  "skip_name_patterns": ["screenshot", "-WA0"],
-
+  "include_videos": true,
+  "skip_name_patterns": [
+    "screenshot",
+    "-WA0"
+  ],
   "unclear_location_km_threshold": 50,
   "big_city_population": 250000,
-
   "trips": [
     {
       "name": "Example Ghana Trip",
       "start": "2099-01-01",
       "end": "2099-01-15"
     }
-  ]
+  ],
+  "use_online_geocoding": true,
+  "append_landmark_to_copy_name": true
 }
