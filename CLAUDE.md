@@ -2,9 +2,13 @@
 
 ## Delivery rule (ALWAYS follow)
 Every finished deliverable (reels, videos, voiceovers, captions, website copy,
-graphics) must be saved to the owner's OneDrive at:
+graphics) must be saved to the owner's OneDrive in a per-post subfolder under:
 
-    /Mame Dee Travel World/Upcoming Post
+    /Mame Dee Travel World/Upcoming post Media/<Post Name>
+
+(e.g. "/Mame Dee Travel World/Upcoming post Media/Turkish Airlines 599 Deal" —
+this matches her existing convention: Cancun 7 Year Anniversary, Cheap Places
+2026, etc. Do NOT create new top-level folders.)
 
 OneDrive is connected via the Composio MCP server (account: angelblu13@aol.com,
 owner Deja Bryant). Use `ONE_DRIVE_ONEDRIVE_UPLOAD_FILE` with a public
