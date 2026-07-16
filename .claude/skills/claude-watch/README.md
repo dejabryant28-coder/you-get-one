@@ -38,12 +38,29 @@ of an image+text model — but in practice it reliably distinguishes music from
 speech, flags emphasis and silence, and anchors it all to timestamps. Skip it
 with `--no-audio`.
 
+## Three modes
+
+The same extraction feeds three output shapes — Claude picks by what you ask for:
+
+- **Study notes** (default) — *learn the content* of a tutorial/lecture/talk.
+  Writes `notes.md`.
+- **Review** — *reverse-engineer why a short works* (hook, pacing, structure) and
+  get a reusable skeleton + a fresh script. Ask "review this reel". Writes
+  `review.md`.
+- **Story Director** — a *pre-publish quality gate*. Scores the cut on curiosity,
+  emotional pull, surprise, memorability, shareability, follow potential,
+  first-3-second retention, and whether the ending earns a follow — then **blocks
+  anything scoring below 8** with a specific, shootable fix. Ask "score this
+  video / is this ready to post". Writes `score.md`. Review explains *why it
+  works*; Story Director decides *whether it's ready*.
+
 ## Usage
 
 Once installed, just ask Claude in natural language:
 
 > watch https://youtube.com/watch?v=… and take notes
-> summarize this lecture, focus on the auth section
+> review this reel and rewrite the hook in the same structure
+> score this cut before I post it — is it ready?
 > what code is shown in ./screen-recording.mp4?
 
 Or drive the extractor directly:

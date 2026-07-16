@@ -13,8 +13,12 @@ description: >-
   "what's in this talk". Also does creator "review" breakdowns — reverse-engineer
   a video's hook, visuals, pacing, and structure and write a fresh script in the
   same shape — for "review this video", "break down this reel/short", "what makes
-  this hook work", "reverse-engineer this". Best under ~30 min; use --start/--end
-  for longer content.
+  this hook work", "reverse-engineer this". And "score" a cut as a pre-publish
+  quality gate — grade curiosity, emotional pull, surprise, memorability,
+  shareability, follow potential, first-3-second retention and whether the ending
+  earns a follow, then block anything scoring below 8 — for "score this video",
+  "story director", "is this ready to post", "rate my cut". Best under ~30 min;
+  use --start/--end for longer content.
 ---
 
 # claude-watch
@@ -117,7 +121,7 @@ Read `manifest.json` in `out_dir` for the full inventory:
 
 ### 4. Write the output — pick a mode
 
-Two output shapes; choose by what the user wants:
+Three output shapes; choose by what the user wants:
 
 - **Study notes** (default) — to *learn the content* (tutorial/lecture/talk).
   Write `notes.md` from the template below.
@@ -128,6 +132,16 @@ Two output shapes; choose by what the user wants:
   [`references/review-template.md`](references/review-template.md) and write
   `review.md`. For this mode, extract with `--max-gap 7 --scene-threshold 0.2`
   so soft dissolves / fast cuts aren't missed.
+- **Story Director** — a *pre-publish quality gate* that scores the cut on how it
+  will make an audience feel and act (curiosity, emotional pull, surprise,
+  memorability, shareability, follow potential, first-3-second retention, and
+  whether the ending earns a follow), then **blocks anything scoring below 8**
+  with a specific fix. Triggers: "score this video", "story director", "is this
+  ready to post", "grade/rate my cut". Follow
+  [`references/story-director.md`](references/story-director.md) and write
+  `score.md`. Extract with the same `--max-gap 7 --scene-threshold 0.2` as review
+  mode. Pairs with review: review explains *why it works*, Story Director decides
+  *whether it's ready*.
 
 Synthesize the frames + transcript (+ audio) into the chosen file inside
 `out_dir`. Then report the path to the user and give a short spoken summary. Do
