@@ -89,6 +89,7 @@ OneDrive, so the layers of protection are:
 ```bash
 cd travel-photo-organizer
 pip install -r requirements.txt
+# if "Failed building wheel for pysher": pip install --upgrade setuptools wheel, then retry
 cp config.example.json config.json     # then edit to taste
 export COMPOSIO_API_KEY=...            # from https://platform.composio.dev
 ```
