@@ -580,7 +580,11 @@ def process(cfg, limit, dry_run):
             if (loc["latitude"], loc["longitude"]) != (0, 0):
                 gps = (loc["latitude"], loc["longitude"])
 
-        if taken is None or gps is None:
+        # EXIF download fallback is images-only: the parser is Pillow-based,
+        # so pulling a whole video down just to fail the parse wastes
+        # bandwidth (camera folders hold saved videos with no metadata).
+        mime = (item.get("file") or {}).get("mimeType", "")
+        if (taken is None or gps is None) and mime.startswith("image/"):
             try:
                 raw = drive.download_bytes(item_id, name)
                 exif_taken, exif_gps = exif_from_bytes(raw)
