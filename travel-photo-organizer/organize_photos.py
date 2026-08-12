@@ -194,6 +194,7 @@ class OneDrive:
                 "item_id": item_id,
                 "parent_reference": {"driveId": self.drive_id,
                                      "id": dest_folder_id},
+                "name": name,
                 "conflict_behavior": "fail",
             })
         except RuntimeError as e:
@@ -527,6 +528,20 @@ def process(cfg, limit, dry_run):
                     log_file_id, log_name).decode("utf-8", "replace")
             except Exception as e:
                 print(f"  (could not read existing log: {e})")
+    # Older log versions used a different column set (no content_hash /
+    # source_item_id). Remap legacy rows into the current schema so the log
+    # stays one well-formed CSV and dedup rebuild reads every row.
+    if existing_csv:
+        header = existing_csv.split("\n", 1)[0].strip()
+        if header != ",".join(LOG_COLUMNS):
+            legacy = list(csv.DictReader(io.StringIO(existing_csv)))
+            buf = io.StringIO()
+            w = csv.DictWriter(buf, fieldnames=LOG_COLUMNS)
+            w.writeheader()
+            for old in legacy:
+                w.writerow({k: (old.get(k) or "") for k in LOG_COLUMNS})
+            existing_csv = buf.getvalue()
+            print(f"  normalized legacy log ({len(legacy)} rows) to current columns")
     if existing_csv and not state["processed_ids"] and not state["processed_hashes"]:
         rebuild_state_from_log(existing_csv, state)
 
@@ -625,7 +640,7 @@ def process(cfg, limit, dry_run):
                 place = country
                 if country == cfg.get("home_country", "United States") and state:
                     place = state
-                dest_parts = [str(taken.year), place]
+                dest_parts = [place]
                 where = f"{place} / {city}"
                 if row["landmark"]:
                     where += f" ({row['landmark']})"

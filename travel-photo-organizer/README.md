@@ -11,13 +11,12 @@ OneDrive/
     ├── Needs Review/
     │   ├── No Location/                   ← photos with no GPS data
     │   └── Unclear Location/              ← GPS present but ambiguous
-    └── 2026/
-        ├── Ghana/           ← one folder per country (international)
-        ├── Mexico/
-        │   └── 20260511_143105 — Villa de Juárez — Viña de Liceaga.jpg
-        ├── Egypt/
-        └── California/      ← domestic photos group by state
-            └── 20260607_… — Long Beach — Long Beach Arena.mp4
+    ├── Ghana/               ← one folder per country (international)
+    ├── Mexico/
+    │   └── 20260511_143105 — Villa de Juárez — Viña de Liceaga.jpg
+    ├── Egypt/
+    └── California/          ← domestic photos group by state
+        └── 20260607_… — Long Beach — Long Beach Arena.mp4
 ```
 
 ## Why OneDrive (and not Google Photos)
